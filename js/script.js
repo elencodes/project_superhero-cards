@@ -102,30 +102,106 @@ const json = `[
 }
 ]`
 
-//при загрузке страницы генерируем карточки (код внутри выполнится только после полной загрузки страницы)
+//При загрузке страницы генерируем карточки (код внутри выполнится только после полной загрузки страницы)
 document.addEventListener("DOMContentLoaded", function (event) {
-	//превращаем JSON-данные в объекты и присваиваем в переменную
-	const cards = JSON.parse(json)
-	//формируем пустую строку
+	//Превращаем JSON-данные в объекты и присваиваем в переменную
+	const cards = JSON.parse(json);
+	//Формируем пустую строку
 	let cardsContent = ""
-	//с помощью цикла генерируем контент для строки
+	//С помощью цикла генерируем контент для строки
 	for (let card of cards) {
 		cardsContent += `
 		<div class="card">
 			<h2 class="subtitle">${card.name}</h2>
-			<p><span>Вселенная:</span> ${card.universe}</p>
-			<p><span>Альтер эго:</span> ${card.alterego}</p>
-			<p><span>Род деятельности:</span> ${card.occupation}</p>
-			<p><span>Друзья:</span> ${card.friends}</p>
-			<p><span>Суперсилы:</span> ${card.superpowers}</p>
+			<p><strong>Вселенная:  </strong>${card.universe}</p>
+			<p><strong>Альтер эго:  </strong>${card.alterego}</p>
+			<p><strong>Род деятельности:  </strong>${card.occupation}</p>
+			<p><strong>Друзья:  </strong>${card.friends}</p>
+			<p><strong>Суперсилы:  </strong>${card.superpowers}</p>
 			<div class="image">
 				<img src="${card.url}" alt="картинка супергероя">
 			</div>
 			<p class="text">${card.info}</p>
+			<div class="ratings-wrapper">
+				<div class="ratings" data-heroid="${card.name}">
+					<span data-rating="5">&#9733</span>
+					<span data-rating="4">&#9733</span>
+					<span data-rating="3">&#9733</span>
+					<span data-rating="2">&#9733</span>
+					<span data-rating="1">&#9733</span>
+				</div>
+			</div>
 		</div>
 		`
 	}
-	//выводим данные карточек на экран
+
+	//Выводим данные карточек на экран
 	const cardsResult = document.querySelector("#cardsContainer")
 	cardsResult.innerHTML = cardsContent;
+
+	//Присваиваем константе stars все элементы с тегом span (все звезды)
+	const stars = document.querySelectorAll(`.ratings span`)
+
+	//Присваиваем константе starsContainer все элементы с классом ratings (контейнеры рейтинга с присвоенным значением card.name)
+	const starsContainer = document.querySelectorAll(`.ratings`)
+
+	//Создаем массив для хранения данных в localStorage
+	let ratings = [];
+
+	//"Бегаем" по звездам и добавляем к каждой слушатель событий onclick
+	for (let star of stars) {
+		star.addEventListener("click", function () {
+			//сохраняем все звезды, принадлежащие герою, на рейтинг которого мы нажали
+			let children = star.parentElement.children;
+			//проходимся по дочерним элементам
+			//создаем цикл (функцию) для того, чтобы оценивать карточку героя только 1 раз
+			for (let child of children) {
+				//проверяем звезду на наличие атрибута data-clicked (щелкнули ли по ней)
+				if (child.getAttribute("data-clicked")) {
+					//если есть атрибут, останавливаем цикл (не позволит оценивать карточку героя дважды)
+					return false;
+				}
+			}
+			//при клике на звезду добавляем атрибут data-clicked со значением true
+			this.setAttribute("data-clicked", "true");
+			//получаем значение рейтинга данных (значение звезды, на которую мы нажали)
+			let rating = this.dataset.rating; //значения атрибута звезды
+			//получаем значение идентификатора рейтинговой группы (имя героя карточки), к которой принадлежит звезда
+			let heroName = this.parentElement.dataset.heroid;
+			//создаем объект данные, который будет содержать имя героя и его рейтинга 
+			let data = {
+				"heroName": heroName,
+				"stars": rating,
+			}
+			//вставляем объект данных (имя героя, рейтинг) в пустой массив ratings
+			ratings.push(data);
+			localStorage.setItem("rating", JSON.stringify(ratings));
+		});
+	}
+
+	//Получаем данные из localStorage и применяем их к группам рейтингов (карточка героя, его оценка), чтобы при перезагрузке страницы не терялись оценки
+	//Проверяем, есть ли ключ в localStorage
+	if (localStorage.getItem("rating")) {
+		//если ключ есть, получаем данные и сохраняем в массиве ratings
+		ratings = JSON.parse(localStorage.getItem("rating"))
+		//"пробегаем" по массиву данных, получаем каждый ключ из localStorage и находим тот же ключ в HTML
+		for (let rating of ratings) {
+			//получаем доступ к каждому идентификатору карточки героя страницы
+			for (let card of starsContainer) {
+				//ищем соответсвующие идентификаторы карточек героев (ключ из localStorage, id в HTML)
+				if (rating["heroName"] == card.dataset.heroid) {
+					//если есть совпадение, то все звезды, принадлежащие карточке героя (card.children)
+					//меняем местами с помощью reverse() (т.к. в html-файле они расположены в обратном порядке)
+					//чтобы обратный метод сработал, преобразовываем коллекцию html, которую возвращает свойство children в массив
+					//далее сохраняем перевернутый массив в переменную reversedStars
+					let reversedStars = Array.from(card.children).reverse();
+					//получаем индекс рейтинговой звезды (мпомня о том, что массивы начинаются с нуля)
+					let index = parseInt(rating["stars"]) - 1;
+					//воспользовавшись индексом массива reversedStars, кликаем на звезду и добавляем атрибут при клике на звезду
+					//далее CSS будет отмечать звезды для каждой оцененной карточки каждый раз при перезагрузке страницы
+					reversedStars[index].setAttribute("data-clicked", "true");
+				}
+			}
+		}
+	};
 })
