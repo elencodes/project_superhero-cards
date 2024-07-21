@@ -135,6 +135,7 @@ document.addEventListener("DOMContentLoaded", function (event) {
 		`
 	}
 
+
 	//Выводим данные карточек на экран
 	const cardsResult = document.querySelector("#cardsContainer")
 	cardsResult.innerHTML = cardsContent;
@@ -147,6 +148,7 @@ document.addEventListener("DOMContentLoaded", function (event) {
 
 	//Создаем массив для хранения данных в localStorage
 	let ratings = [];
+
 
 	//"Бегаем" по звездам и добавляем к каждой слушатель событий onclick
 	for (let star of stars) {
@@ -178,6 +180,7 @@ document.addEventListener("DOMContentLoaded", function (event) {
 			localStorage.setItem("rating", JSON.stringify(ratings));
 		});
 	}
+
 
 	//Получаем данные из localStorage и применяем их к группам рейтингов (карточка героя, его оценка), чтобы при перезагрузке страницы не терялись оценки
 	//Проверяем, есть ли ключ в localStorage
